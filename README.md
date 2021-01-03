@@ -4,3 +4,13 @@ This repository contains a pytorch implementation of an algorithm for artistic s
 
 The model uses the method described in [Perceptual Losses for Real-Time Style Transfer and Super-Resolution](https://arxiv.org/abs/1603.08155) along with [Instance Normalization](https://arxiv.org/pdf/1607.08022.pdf). 
 
+# Demo
+
+Input image:
+![content](/images/content/image1.jpg)
+
+Style image:
+![style](/images/style/rain_night.jpg)
+
+Output image:
+![output](/images/output/out1.jpg)
