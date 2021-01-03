@@ -135,7 +135,8 @@ def stylize(args):
     content_image = content_image.unsqueeze(0).to(device)
 
     if args.model.endswith(".onnx"):
-        output = stylize_onnx_caffe2(content_image, args)
+        print("Not support onnx at the moment.")
+        # output = stylize_onnx_caffe2(content_image, args)
     else:
         with torch.no_grad():
             style_model = TransformerNet()
@@ -155,20 +156,20 @@ def stylize(args):
 
 
 # read ONNX model and run it using Caffe2
-def stylize_onnx_caffe2(content_image, args):
+# def stylize_onnx_caffe2(content_image, args):
+    #
+    # assert not args.export_onnx
+    #
+    # import onnx
+    # import onnx_caffe2.backend
+    #
+    # model = onnx.load(args.model)
+    #
+    # prepared_backend = onnx_caffe2.backend.prepare(model, device='CUDA' if args.cuda else 'CPU')
+    # inp = {model.graph.input[0].name: content_image.numpy()}
+    # c2_out = prepared_backend.run(inp)[0]
 
-    assert not args.export_onnx
-
-    import onnx
-    import onnx_caffe2.backend
-
-    model = onnx.load(args.model)
-
-    prepared_backend = onnx_caffe2.backend.prepare(model, device='CUDA' if args.cuda else 'CPU')
-    inp = {model.graph.input[0].name: content_image.numpy()}
-    c2_out = prepared_backend.run(inp)[0]
-
-    return torch.from_numpy(c2_out)
+    # return torch.from_numpy(c2_out)
 
 
 def main():
