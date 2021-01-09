@@ -6,60 +6,52 @@ import os
 # turn pytorch model to api
 #########################
 
-import torchvision.models as models
-import torchvision.transforms as transforms
+import torch
+from torchvision import transforms
 from PIL import Image
+import re
 from flask import Flask, jsonify, request
 
-app = Flask(__name__)
-# Trained on 1000 classes from ImageNet
-model = models.densenet121(pretrained=True)
-# Turns off autograd and
-model.eval()
+from transformer_net import TransformerNet
 
-img_class_map = None
-# Human-readable names for Imagenet classes
-mapping_file_path = 'index_to_name.json'
-if os.path.isfile(mapping_file_path):
-    with open(mapping_file_path) as f:
-        img_class_map = json.load(f)
+app = Flask(__name__)
+
+cuda = int(1)
+device = torch.device("cuda" if cuda else "cpu")
+trained_model_path = 'saved_model/rain_night.pth'
 
 
 # when sending an RGB image
 def transform_image(infile):
     # use multiple TorchVision transforms to ready the image
-    input_transforms = [transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.mul(255))]
-    my_transforms = transforms.Compose(input_transforms)
+    my_transforms = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Lambda(lambda x: x.mul(255))
+    ])
     # Open the image file
-    image = Image.open(infile)
+    # image = Image.open(infile)
+    image = Image.open(infile).convert('RGB')
     # Transform PIL image to appropriately-shaped PyTorch tensor
     timg = my_transforms(image)
     # PyTorch models expect batched input; create a batch of 1
-    timg.unsqueeze_(0)
+    timg = timg.unsqueeze(0).to(device)
     return timg
 
 
-# # Get a prediction
-# def get_prediction(input_tensor):
-#     # Get likelihoods for all ImageNet classes
-#     outputs = model.forward(input_tensor)
-#     # Extract the most likely class
-#     _, y_hat = outputs.max(1)
-#     # Extract the int value from the PyTorch tensor
-#     prediction = y_hat.item()
-#     return prediction
-#
-#
-# # Make the prediction human-readable
-# def render_prediction(prediction_idx):
-#     stridx = str(prediction_idx)
-#     class_name = 'Unknown'
-#     if img_class_map is not None:
-#         if stridx in img_class_map is not None:
-#             class_name = img_class_map[stridx][1]
-#
-#     return prediction_idx, class_name
+# apply the trained model on content image
+def get_output(trained_model, content_image):
+    with torch.no_grad():
+        style_model = TransformerNet()
+        state_dict = torch.load(trained_model)
+    # remove saved deprecated running_* keys in InstanceNorm from the checkpoint
+    for k in list(state_dict.keys()):
+        if re.search(r'in\d+\.running_(mean|var)$', k):
+            del state_dict[k]
+    style_model.load_state_dict(state_dict)
+    style_model.to(device)
+    output = style_model(content_image).cpu()
+    # utils.save_image(args.output_image, output[0])
+    return output
 
 
 # !python3 "neural_style.py" eval --content-image './image1.jpg' --model './rain_princess.pth' --output-image './output/out1.jpg' --cuda 1
@@ -75,7 +67,7 @@ def generate():
         file = request.files['file']
         if file is not None:
             input_tensor = transform_image(file)
-            prediction_idx = get_prediction(input_tensor)
+            output_tensor = get_output(trained_model_path, input_tensor)
             class_id, class_name = render_prediction(prediction_idx)
             return jsonify({'class_id': class_id, 'class_name': class_name})
 
