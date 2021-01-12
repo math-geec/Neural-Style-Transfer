@@ -16,7 +16,7 @@ from transformer_net import TransformerNet
 
 app = Flask(__name__)
 
-cuda = int(1)
+cuda = int(0)
 device = torch.device("cuda" if cuda else "cpu")
 trained_model_path = 'saved_model/rain_night.pth'
 
@@ -68,14 +68,14 @@ def generate():
         if file is not None:
             input_tensor = transform_image(file)
             output_tensor = get_output(trained_model_path, input_tensor)
-            class_id, class_name = render_prediction(prediction_idx)
-            return jsonify({'class_id': class_id, 'class_name': class_name})
+            # class_id, class_name = render_prediction(prediction_idx)
+            return jsonify(output_tensor)
 
 
 ###########################
 # code to test connection with android app
 ###########################
-
+#
 # from flask import Flask, request, jsonify
 #
 # app = Flask(__name__)
@@ -115,7 +115,7 @@ def generate():
 #         return jsonify({'error': 'invalid input'})
 #
 #     return jsonify({'you sent this': json['text']})
-#
+
 ###########################
 
 # running web app in local machine
