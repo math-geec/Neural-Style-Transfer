@@ -10,15 +10,17 @@ import torch
 from torchvision import transforms
 from PIL import Image
 import re
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 
 from transformer_net import TransformerNet
+from utils import save_image
 
 app = Flask(__name__)
 
 cuda = int(0)
 device = torch.device("cuda" if cuda else "cpu")
 trained_model_path = 'saved_model/rain_night.pth'
+output_image_path = 'images/output/out2.jpg'
 
 
 # when sending an RGB image
@@ -43,14 +45,14 @@ def get_output(trained_model, content_image):
     with torch.no_grad():
         style_model = TransformerNet()
         state_dict = torch.load(trained_model)
-    # remove saved deprecated running_* keys in InstanceNorm from the checkpoint
-    for k in list(state_dict.keys()):
-        if re.search(r'in\d+\.running_(mean|var)$', k):
-            del state_dict[k]
-    style_model.load_state_dict(state_dict)
-    style_model.to(device)
-    output = style_model(content_image).cpu()
-    # utils.save_image(args.output_image, output[0])
+        # remove saved deprecated running_* keys in InstanceNorm from the checkpoint
+        for k in list(state_dict.keys()):
+            if re.search(r'in\d+\.running_(mean|var)$', k):
+                del state_dict[k]
+        style_model.load_state_dict(state_dict)
+        style_model.to(device)
+        output = style_model(content_image).cpu()
+        # utils.save_image(args.output_image, output[0])
     return output
 
 
@@ -64,12 +66,12 @@ def root():
 @app.route('/generate', methods=['POST'])
 def generate():
     if request.method == 'POST':
-        file = request.files['file']
+        file = request.files['image']
         if file is not None:
             input_tensor = transform_image(file)
             output_tensor = get_output(trained_model_path, input_tensor)
-            # class_id, class_name = render_prediction(prediction_idx)
-            return jsonify(output_tensor)
+            output_image = save_image(output_image_path, output_tensor[0])
+            return send_file(output_image_path, mimetype='image/jpg')
 
 
 ###########################
@@ -123,7 +125,7 @@ def generate():
 # visible across the network
 # BaseUrl for Android http://<your ip address>:5000/...
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
 # development way
 # server on http://127.0.0.1:5000/
