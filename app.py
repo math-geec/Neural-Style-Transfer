@@ -5,6 +5,7 @@ import os
 ##########################
 # turn pytorch model to api
 #########################
+from base64 import encodebytes
 
 import torch
 from torchvision import transforms
@@ -56,6 +57,17 @@ def get_output(trained_model, content_image):
     return output
 
 
+def get_response_image(image_path):
+    # reads the PIL image
+    pil_img = Image.open(image_path, mode='r')
+    # convert the PIL image to byte array
+    byte_arr = io.BytesIO()
+    pil_img.save(byte_arr, format='JPEG')
+    # encode as base64
+    encoded_img = encodebytes(byte_arr.getvalue()).decode('ascii')
+    return encoded_img
+
+
 # !python3 "neural_style.py" eval --content-image './image1.jpg' --model './rain_princess.pth' --output-image './output/out1.jpg' --cuda 1
 
 @app.route('/', methods=['GET'])
@@ -71,7 +83,10 @@ def generate():
             input_tensor = transform_image(file)
             output_tensor = get_output(trained_model_path, input_tensor)
             output_image = save_image(output_image_path, output_tensor[0])
-            return send_file(output_image_path, mimetype='image/jpg')
+            # return send_file(output_image_path, mimetype='image/jpg')
+            encoded_img = get_response_image(output_image_path)
+            response = {'image': encoded_img}
+            return jsonify(response)
 
 
 ###########################
