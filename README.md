@@ -15,4 +15,16 @@ Style image:
 Output image:
 ![output](/images/output/out1.jpg)
 
+*Known issue*:
+
+
+
+- cuda = 0 kills all the RAM
+
+
+
+- cuda = 1 runs out of drive space
+
+
+
 *Possible solution*: reduce content image size 
