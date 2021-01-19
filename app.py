@@ -21,7 +21,7 @@ app = Flask(__name__)
 cuda = int(0)
 device = torch.device("cuda" if cuda else "cpu")
 trained_model_path = 'saved_model/rain_night.pth'
-output_image_path = 'images/output/out2.jpg'
+output_image_path = 'images/output/out4.jpg'
 
 
 # when sending an RGB image
