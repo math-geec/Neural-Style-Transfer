@@ -15,4 +15,4 @@ Style image:
 Output image:
 ![output](/images/output/out1.jpg)
 
-
+*Possible solution*: reduce content image size 
